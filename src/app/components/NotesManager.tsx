@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { CreateNote } from './CreateNote'
 import { Notes } from './Notes'
-import { Note } from '../lib/database'
+import { type Note } from '../lib/database'
 
 export const NotesManager = () => {
   const [notes, setNotes] = useState<Array<Note>>([])

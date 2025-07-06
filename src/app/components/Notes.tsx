@@ -1,7 +1,7 @@
 'use client'
 
 import clsx from 'clsx'
-import { Note } from '../lib/database'
+import { type Note } from '../lib/database'
 
 export const Notes = ({
   notes,
