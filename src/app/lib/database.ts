@@ -22,8 +22,6 @@ const notes: Note[] = [
 
 export const addNote = (note: Note) => {
   notes.push(note)
-
-  console.log('Note added:', note)
 }
 
 export const getAllNotes = () => {
