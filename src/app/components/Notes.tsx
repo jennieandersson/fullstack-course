@@ -1,36 +1,17 @@
 'use client'
 
 import clsx from 'clsx'
-import { useEffect, useState, useCallback } from 'react'
 import { Note } from '../lib/database'
 
-export const Notes = ({ shouldRefreshList }: { shouldRefreshList: number }) => {
-  const [notes, setNotes] = useState<Note[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchNotes = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await fetch('/api/get-notes')
-      if (!response.ok) {
-        throw new Error('Failed to fetch notes')
-      }
-      const data = await response.json()
-      setNotes(data)
-    } catch (error) {
-      console.error('Error fetching notes:', error)
-      setError('Failed to load notes. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchNotes()
-  }, [fetchNotes, shouldRefreshList])
-
+export const Notes = ({
+  notes,
+  error,
+  loading,
+}: {
+  notes: Array<Note>
+  error: string | null
+  loading: boolean
+}) => {
   if (loading) {
     return (
       <div className='flex justify-center items-center p-8'>

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useRef, Dispatch, SetStateAction } from 'react'
+import { useState, useRef } from 'react'
 
 export const CreateNote = ({
-  setShouldRefreshList,
+  onNoteCreated,
 }: {
-  setShouldRefreshList: Dispatch<SetStateAction<number>>
+  onNoteCreated: () => void
 }) => {
   const [error, setError] = useState<boolean>(false)
   const [success, setSuccess] = useState<boolean>(false)
@@ -16,13 +16,14 @@ export const CreateNote = ({
     event.preventDefault()
     setLoading(true)
     setError(false)
+    setSuccess(false)
 
     const formData = new FormData(event.currentTarget)
     const title = formData.get('title') as string
     const content = formData.get('content') as string
 
     try {
-      const response = await fetch('/api/create-post', {
+      const response = await fetch('/api/notes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,7 +41,7 @@ export const CreateNote = ({
         throw new Error(data.error || 'Unknown error')
       }
       setSuccess(true)
-      setShouldRefreshList((prev) => prev + 1) // Trigger refresh in parent component
+      onNoteCreated()
       formRef.current?.reset()
     } catch (error) {
       console.error('Error creating note:', error)
