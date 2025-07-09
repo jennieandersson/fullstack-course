@@ -1,45 +1,46 @@
-import { addNote, getAllNotes } from '@/app/lib/database'
 import { NextResponse } from 'next/server'
+import prisma from '../../../../lib/prisma'
+import { CreateNoteInput, NoteResponse, NotesListResponse } from '@/types/notes'
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<NextResponse<NoteResponse>> {
   try {
-    const { title, content } = await req.json()
+    const { title, content }: CreateNoteInput = await req.json()
 
     if (!title || !content) {
       return NextResponse.json(
-        { error: 'Title and content are required' },
+        { success: false, error: 'Title and content are required' },
         { status: 400 }
       )
     }
 
     const newNote = {
-      id: crypto.randomUUID(),
       title: title.trim(),
       content: content.trim(),
     }
 
-    addNote(newNote)
+    const note = await prisma.note.create({ data: newNote })
 
     return NextResponse.json({
       success: true,
+      note,
     })
   } catch (error) {
     console.error('Error creating note:', error)
     return NextResponse.json(
-      { error: 'Failed to create note' },
+      { success: false, error: 'Failed to create note' },
       { status: 500 }
     )
   }
 }
 
-export async function GET() {
+export async function GET(): Promise<NextResponse<NotesListResponse>> {
   try {
-    const notes = getAllNotes()
-    return NextResponse.json(notes)
+    const notes = await prisma.note.findMany()
+    return NextResponse.json({ success: true, notes })
   } catch (error) {
     console.error('Error fetching notes:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch notes' },
+      { success: false, error: 'Failed to fetch notes' },
       { status: 500 }
     )
   }

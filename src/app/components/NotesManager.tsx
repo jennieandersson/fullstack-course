@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { CreateNote } from './CreateNote'
 import { Notes } from './Notes'
-import { type Note } from '../lib/database'
+import { Note } from '@/types/notes'
 
 export const NotesManager = () => {
   const [notes, setNotes] = useState<Array<Note>>([])
@@ -19,7 +19,7 @@ export const NotesManager = () => {
         throw new Error('Failed to fetch notes')
       }
       const data = await response.json()
-      setNotes(data)
+      setNotes(data.notes)
     } catch (error) {
       console.error('Error fetching notes:', error)
       setError('Failed to load notes. Please try again.')
@@ -41,7 +41,12 @@ export const NotesManager = () => {
 
       <section>
         <h2 className='text-2xl font-bold mb-4 text-gray-800'>Your Notes</h2>
-        <Notes notes={notes} loading={loading} error={error} />
+        <Notes
+          notes={notes}
+          loading={loading}
+          error={error}
+          onNoteDeleted={fetchNotes}
+        />
       </section>
     </div>
   )
