@@ -39,6 +39,7 @@ describe('/api/notes', () => {
         title: 'Test Note',
         content: 'This is a test note content',
         createdAt: new Date(),
+        userId: 'test-user-id',
       }
 
       mockCreate.mockResolvedValue(mockCreatedNote)
@@ -75,6 +76,7 @@ describe('/api/notes', () => {
         title: 'Test Note',
         content: 'This is a test note content',
         createdAt: new Date(),
+        userId: 'test-user-id',
       }
 
       mockCreate.mockResolvedValue(mockCreatedNote)
@@ -184,12 +186,14 @@ describe('/api/notes', () => {
           title: 'Note 1',
           content: 'Content 1',
           createdAt: new Date('2025-07-07T21:03:42.693Z'),
+          userId: 'test-user-id',
         },
         {
           id: 'note-uuid-2',
           title: 'Note 2',
           content: 'Content 2',
           createdAt: new Date('2025-07-07T21:03:42.693Z'),
+          userId: 'test-user-id',
         },
       ]
 
