@@ -50,3 +50,62 @@ export async function DELETE(
     )
   }
 }
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: { id: string } }
+): Promise<NextResponse<Omit<NoteResponse, 'note'>>> {
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user?.id) {
+    return NextResponse.json(
+      { success: false, error: 'Unauthorized' },
+      { status: 401 }
+    )
+  }
+
+  try {
+    const { id } = params
+    const { title, content } = await req.json()
+
+    // Validate request body
+    if (!title || !content) {
+      return NextResponse.json(
+        { success: false, error: 'Title and content are required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if the note exists and belongs to the user
+    const existingNote = await prisma.note.findUnique({
+      where: { id },
+      select: { userId: true },
+    })
+
+    if (!existingNote) {
+      return NextResponse.json(
+        { success: false, error: 'Note not found' },
+        { status: 404 }
+      )
+    }
+
+    if (existingNote.userId !== session.user.id) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden' },
+        { status: 403 }
+      )
+    }
+
+    await prisma.note.update({
+      where: { id },
+      data: { title, content },
+    })
+
+    return NextResponse.json({ success: true }, { status: 200 })
+  } catch (error) {
+    console.error('Error updating note:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to update note' },
+      { status: 500 }
+    )
+  }
+}

@@ -33,6 +33,9 @@ export const authOptions = {
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' as const },
   secret: process.env.NEXTAUTH_SECRET,
+  pages: {
+    signIn: '/signin',
+  },
   callbacks: {
     jwt({ token, user }: { token: JWT; user?: User }) {
       if (user) {

@@ -1,42 +1,36 @@
 'use client'
 
-import { useState } from 'react'
+import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
-export default function RegisterPage() {
+export default function SignInPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setError('')
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to register')
+      if (result?.error) {
+        setError('Invalid credentials')
+      } else {
+        router.push('/')
       }
-
-      const data = await response.json()
-      if (!data.success) {
-        throw new Error(data.error || 'Unknown error')
-      }
-
-      router.push('/signin')
     } catch (err) {
-      console.error('Error during registration:', err)
-      setError('Registration failed. Please try again.')
+      console.error('Sign in error:', err)
+      setError('An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -47,7 +41,7 @@ export default function RegisterPage() {
       <div className='max-w-md w-full space-y-8'>
         <div>
           <h2 className='mt-6 text-center text-3xl font-extrabold text-gray-900'>
-            Create your account
+            Sign in to your account
           </h2>
         </div>
         <form className='mt-8 space-y-6' onSubmit={handleSubmit}>
@@ -81,7 +75,7 @@ export default function RegisterPage() {
                 id='password'
                 name='password'
                 type='password'
-                autoComplete='new-password'
+                autoComplete='current-password'
                 required
                 className='appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm'
                 placeholder='Password'
@@ -97,19 +91,21 @@ export default function RegisterPage() {
               disabled={isLoading}
               className='group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed'
             >
-              {isLoading ? 'Creating account...' : 'Register'}
+              {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
 
           <div className='flex items-center justify-center'>
             <div className='text-sm'>
-              <span className='text-gray-600'>Already have an account? </span>
+              <span className='text-gray-600'>
+                Don&apos;t have an account?{' '}
+              </span>
               <button
                 type='button'
-                onClick={() => router.push('/signin')}
+                onClick={() => router.push('/register')}
                 className='font-medium text-indigo-600 hover:text-indigo-500'
               >
-                Sign in here
+                Register here
               </button>
             </div>
           </div>

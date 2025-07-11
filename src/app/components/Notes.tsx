@@ -1,8 +1,10 @@
 'use client'
 
 import { Note } from '@/types/notes'
-import clsx from 'clsx'
 import { useState } from 'react'
+import { Edit2, Trash2, Loader, RefreshCw } from 'lucide-react'
+import { EditNote } from './EditNote'
+import { toast } from 'react-toastify'
 
 export const Notes = ({
   notes,
@@ -15,10 +17,9 @@ export const Notes = ({
   loading: boolean
   onNoteDeleted: () => void
 }) => {
-  const [successDeleted, setSuccessDeleted] = useState(false)
+  const [editingNote, setEditingNote] = useState<string | null>(null)
 
   const handleDeleteNote = async (id: string) => {
-    setSuccessDeleted(false)
     try {
       const response = await fetch(`/api/notes/${id}`, {
         method: 'DELETE',
@@ -31,20 +32,26 @@ export const Notes = ({
       if (!data.success) {
         throw new Error(data.error || 'Unknown error')
       }
-      // set a state to indicate the note was deleted
-      // and trigger the parent component to refresh the notes
-
-      setSuccessDeleted(true)
+      toast.success('Note deleted successfully!')
       onNoteDeleted()
     } catch (error) {
+      toast.error('Failed to delete note')
       console.error('Error deleting note:', error)
     }
+  }
+
+  const handleEditNote = (note: Note) => {
+    setEditingNote(note.id)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingNote(null)
   }
 
   if (loading) {
     return (
       <div className='flex justify-center items-center p-8'>
-        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500'></div>
+        <Loader className='h-8 w-8 animate-spin text-blue-500' />
         <span className='ml-2 text-gray-600'>Loading notes...</span>
       </div>
     )
@@ -56,8 +63,9 @@ export const Notes = ({
         <p className='text-red-500 mb-4'>{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className='bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors'
+          className='flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors mx-auto'
         >
+          <RefreshCw className='h-4 w-4' />
           Retry
         </button>
       </div>
@@ -82,57 +90,51 @@ export const Notes = ({
           {notes.length} {notes.length === 1 ? 'note' : 'notes'}
         </span>
       </div>
-      {successDeleted && (
-        <div className='mb-4 text-green-500'>Note deleted successfully!</div>
-      )}
       <ul className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'>
-        {notes.map((note, index) => (
+        {notes.map((note) => (
           <li
             key={note.id}
-            className={clsx(
-              'bg-yellow-200 p-4 min-h-48 shadow-lg rounded-sm',
-              'transform transition-all duration-200 hover:scale-105 hover:shadow-xl',
-              'relative border border-yellow-300 hover:rotate-0 cursor-pointer',
-              'flex flex-col',
-              {
-                'rotate-1': index % 3 === 0,
-                '-rotate-1': index % 3 === 1,
-                'rotate-0': index % 3 === 2,
-              }
-            )}
-            style={{
-              fontFamily: '"Comic Sans MS", cursive, sans-serif',
-            }}
-            title={`${note.title}\n\n${note.content}`}
+            className='bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-200 overflow-hidden'
           >
-            <h3 className='text-lg font-bold mb-3 text-gray-800 line-clamp-2'>
-              {note.title}
-            </h3>
-            {note.content && (
-              <p className='text-sm text-gray-700 mb-2 line-clamp-3'>
-                {note.content}
-              </p>
+            {editingNote === note.id ? (
+              <EditNote
+                note={note}
+                onCancel={handleCancelEdit}
+                setEditingNote={setEditingNote}
+                onNoteDeleted={onNoteDeleted}
+              />
+            ) : (
+              <>
+                <div className='p-4 pb-2'>
+                  <h3 className='text-lg font-semibold mb-2 text-gray-800 line-clamp-2'>
+                    {note.title}
+                  </h3>
+                  {note.content && (
+                    <p className='text-sm text-gray-600 line-clamp-4'>
+                      {note.content}
+                    </p>
+                  )}
+                </div>
+                <div className='flex justify-end gap-2 p-4 pt-2 border-t border-gray-100'>
+                  <button
+                    onClick={() => handleEditNote(note)}
+                    className='p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors'
+                    aria-label='Edit note'
+                    title='Edit note'
+                  >
+                    <Edit2 className='h-4 w-4' />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteNote(note.id)}
+                    className='p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors'
+                    aria-label='Delete note'
+                    title='Delete note'
+                  >
+                    <Trash2 className='h-4 w-4' />
+                  </button>
+                </div>
+              </>
             )}
-            {/* delete button with a red circle and white x */}
-            <button
-              onClick={() => handleDeleteNote(note.id)}
-              className='absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-sm hover:shadow-md'
-              aria-label='Delete note'
-            >
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                className='h-3 w-3'
-                viewBox='0 0 20 20'
-                fill='currentColor'
-                aria-hidden='true'
-              >
-                <path
-                  fillRule='evenodd'
-                  d='M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z'
-                  clipRule='evenodd'
-                />
-              </svg>
-            </button>
           </li>
         ))}
       </ul>
