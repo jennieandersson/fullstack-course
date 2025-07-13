@@ -1,4 +1,5 @@
 // Import Prisma-generated types
+import z from 'zod'
 import { Note } from '../generated/prisma'
 
 // Re-export the main Note type
@@ -15,18 +16,21 @@ export type UpdateNoteInput = {
   content?: string | null
 }
 
-// Type for API responses
-export type NoteResponse = {
+// Generic API Response types
+export type ApiResponse<T> = {
   success: boolean
-  note?: Note
+  data?: T
   error?: string
 }
 
-export type NotesListResponse = {
-  success: boolean
-  notes?: Note[]
-  error?: string
-}
+export type ApiError =
+  | { error: string }
+  | { error: ReturnType<typeof z.treeifyError> }
+
+// Specific response types
+export type NoteResponse = ApiResponse<Note>
+export type NotesListResponse = ApiResponse<Note[]>
+export type DeleteNoteResponse = ApiResponse<{ success: boolean }>
 
 // Type for form data (before sending to API)
 export type NoteFormData = {

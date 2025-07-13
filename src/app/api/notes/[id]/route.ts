@@ -1,111 +1,57 @@
-import { NoteResponse } from '@/types/notes'
 import { NextResponse } from 'next/server'
-import prisma from '../../../../../lib/prisma'
-import { authOptions } from '../../../../../lib/auth'
-import { getServerSession } from 'next-auth/next'
+import { noteSchema } from '@/lib/validation/noteSchema'
+import { withErrorHandling } from '@/lib/error-handling'
+import { withAuthAndOwnership } from '@/lib/auth-utils'
+import {
+  createNotFoundResponse,
+  createSuccessResponse,
+} from '@/lib/api-responses'
+import { noteQueries } from '@/lib/db-utils'
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } }
-): Promise<NextResponse<Omit<NoteResponse, 'note'>>> {
-  const session = await getServerSession(authOptions)
-  if (!session || !session.user?.id) {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized' },
-      { status: 401 }
-    )
-  }
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
+  return withErrorHandling(async () => {
+    const { id } = await params
 
-  try {
-    const { id } = params
+    const note = await noteQueries.findById(id)
 
-    // First check if the note exists and belongs to the user
-    const existingNote = await prisma.note.findUnique({
-      where: { id },
-      select: { userId: true },
-    })
-
-    if (!existingNote) {
-      return NextResponse.json(
-        { success: false, error: 'Note not found' },
-        { status: 404 }
-      )
+    if (!note) {
+      return createNotFoundResponse('Note not found')
     }
 
-    if (existingNote.userId !== session.user.id) {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden' },
-        { status: 403 }
-      )
-    }
-
-    await prisma.note.delete({ where: { id } })
-
-    return NextResponse.json({ success: true }, { status: 200 })
-  } catch (error) {
-    console.error('Error deleting note:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to delete note' },
-      { status: 500 }
-    )
-  }
+    return withAuthAndOwnership(async () => {
+      await noteQueries.delete(id)
+      return createSuccessResponse({ success: true })
+    }, note.userId)
+  })
 }
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
-): Promise<NextResponse<Omit<NoteResponse, 'note'>>> {
-  const session = await getServerSession(authOptions)
-  if (!session || !session.user?.id) {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized' },
-      { status: 401 }
-    )
-  }
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
+  return withErrorHandling(async () => {
+    const { id } = await params
+    const body = await req.json()
+    const parsed = noteSchema.parse(body)
 
-  try {
-    const { id } = params
-    const { title, content } = await req.json()
+    const { title, content } = parsed
 
-    // Validate request body
-    if (!title || !content) {
-      return NextResponse.json(
-        { success: false, error: 'Title and content are required' },
-        { status: 400 }
-      )
+    const note = await noteQueries.findById(id)
+
+    if (!note) {
+      return createNotFoundResponse('Note not found')
     }
 
-    // Check if the note exists and belongs to the user
-    const existingNote = await prisma.note.findUnique({
-      where: { id },
-      select: { userId: true },
-    })
+    return withAuthAndOwnership(async () => {
+      await noteQueries.update(id, {
+        title: title.trim(),
+        content: content?.trim() || null,
+      })
 
-    if (!existingNote) {
-      return NextResponse.json(
-        { success: false, error: 'Note not found' },
-        { status: 404 }
-      )
-    }
-
-    if (existingNote.userId !== session.user.id) {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden' },
-        { status: 403 }
-      )
-    }
-
-    await prisma.note.update({
-      where: { id },
-      data: { title, content },
-    })
-
-    return NextResponse.json({ success: true }, { status: 200 })
-  } catch (error) {
-    console.error('Error updating note:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to update note' },
-      { status: 500 }
-    )
-  }
+      return createSuccessResponse({ success: true })
+    }, note.userId)
+  })
 }

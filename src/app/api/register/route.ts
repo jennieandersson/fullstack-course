@@ -1,24 +1,22 @@
 import { hash } from 'bcryptjs'
-import { NextResponse } from 'next/server'
-import prisma from '../../../../lib/prisma'
+import { registerSchema } from '@/lib/validation/registerSchema'
+import { withErrorHandling } from '@/lib/error-handling'
+import { createSuccessResponse } from '@/lib/api-responses'
+import { userQueries } from '@/lib/db-utils'
 
 export async function POST(req: Request) {
-  const body = await req.json()
-  const { email, password } = body
+  return withErrorHandling(async () => {
+    const body = await req.json()
 
-  if (!email || !password) {
-    return NextResponse.json(
-      { error: 'Missing email or password' },
-      { status: 400 }
-    )
-  }
+    const parsed = registerSchema.parse(body) // This will throw ZodError if invalid
 
-  await prisma.user.create({
-    data: {
+    const { email, password } = parsed
+
+    await userQueries.create({
       email,
       password: await hash(password, 10),
-    },
-  })
+    })
 
-  return NextResponse.json({ success: true }, { status: 201 })
+    return createSuccessResponse({ success: true }, 201)
+  })
 }

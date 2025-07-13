@@ -4,6 +4,8 @@ import prisma from './prisma'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import type { JWT } from 'next-auth/jwt'
 import type { Session, User } from 'next-auth'
+import { env } from '../src/lib/env'
+import { userQueries } from '@/lib/db-utils'
 
 export const authOptions = {
   providers: [
@@ -20,9 +22,7 @@ export const authOptions = {
         if (!credentials || !credentials.email || !credentials.password) {
           throw new Error('Missing credentials')
         }
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        })
+        const user = await userQueries.findByEmail(credentials.email)
         if (!user || !(await compare(credentials.password, user.password))) {
           throw new Error('Invalid credentials')
         }
@@ -32,7 +32,7 @@ export const authOptions = {
   ],
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' as const },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: env.NEXTAUTH_SECRET,
   pages: {
     signIn: '/signin',
   },

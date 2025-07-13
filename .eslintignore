@@ -1,0 +1,17 @@
+# Generated files
+src/generated/
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Config files
+*.config.js
+*.config.mjs
+*.config.ts
+
+# Other files that shouldn't be linted
+*.min.js
+*.bundle.js
+coverage/

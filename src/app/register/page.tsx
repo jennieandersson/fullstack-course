@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { API_ROUTES } from '@/lib/constants'
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('')
@@ -16,7 +17,7 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/register', {
+      const response = await fetch(API_ROUTES.REGISTER, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

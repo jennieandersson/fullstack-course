@@ -4,41 +4,11 @@ import { Note } from '@/types/notes'
 import { useState } from 'react'
 import { Edit2, Trash2, Loader, RefreshCw } from 'lucide-react'
 import { EditNote } from './EditNote'
-import { toast } from 'react-toastify'
+import { useNotes } from '@/hooks/useNotes'
 
-export const Notes = ({
-  notes,
-  error,
-  loading,
-  onNoteDeleted,
-}: {
-  notes: Array<Note>
-  error: string | null
-  loading: boolean
-  onNoteDeleted: () => void
-}) => {
+export const Notes = () => {
   const [editingNote, setEditingNote] = useState<string | null>(null)
-
-  const handleDeleteNote = async (id: string) => {
-    try {
-      const response = await fetch(`/api/notes/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete note')
-      }
-      const data = await response.json()
-      if (!data.success) {
-        throw new Error(data.error || 'Unknown error')
-      }
-      toast.success('Note deleted successfully!')
-      onNoteDeleted()
-    } catch (error) {
-      toast.error('Failed to delete note')
-      console.error('Error deleting note:', error)
-    }
-  }
+  const { notes, isLoading, error, deleteNote, isDeleting } = useNotes()
 
   const handleEditNote = (note: Note) => {
     setEditingNote(note.id)
@@ -48,11 +18,10 @@ export const Notes = ({
     setEditingNote(null)
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className='flex justify-center items-center p-8'>
         <Loader className='h-8 w-8 animate-spin text-blue-500' />
-        <span className='ml-2 text-gray-600'>Loading notes...</span>
       </div>
     )
   }
@@ -60,7 +29,7 @@ export const Notes = ({
   if (error) {
     return (
       <div className='text-center p-8'>
-        <p className='text-red-500 mb-4'>{error}</p>
+        <p className='text-red-500 mb-4'>{error.message}</p>
         <button
           onClick={() => window.location.reload()}
           className='flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors mx-auto'
@@ -101,7 +70,6 @@ export const Notes = ({
                 note={note}
                 onCancel={handleCancelEdit}
                 setEditingNote={setEditingNote}
-                onNoteDeleted={onNoteDeleted}
               />
             ) : (
               <>
@@ -125,7 +93,8 @@ export const Notes = ({
                     <Edit2 className='h-4 w-4' />
                   </button>
                   <button
-                    onClick={() => handleDeleteNote(note.id)}
+                    onClick={() => deleteNote(note.id)}
+                    disabled={isDeleting}
                     className='p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors'
                     aria-label='Delete note'
                     title='Delete note'
